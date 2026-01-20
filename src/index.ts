@@ -21,7 +21,7 @@ class DevtoolsDetector {
   private isDisabledByQuery: boolean = false;
 
   constructor(options: DevtoolsDetectorOptions = {}) {
-    this.checkInterval = options.checkInterval || 500;
+    this.checkInterval = options.checkInterval || 1000; // 默认 1 秒
     this.onOpen = options.onOpen;
     this.onClose = options.onClose;
     this.maxCheckCount = options.maxCheckCount || Infinity;
@@ -43,7 +43,9 @@ class DevtoolsDetector {
     }
     
     this.checkCount = 0;
-    this.check();
+    this.scheduleCheck(); // 首次检测
+    
+    // 使用定时器调度后续检测
     this.timer = window.setInterval(() => {
       this.checkCount++;
       if (
@@ -54,8 +56,25 @@ class DevtoolsDetector {
         this.stop();
         return;
       }
-      this.check();
+      this.scheduleCheck();
     }, this.checkInterval);
+  }
+
+  private scheduleCheck(): void {
+    // 使用 requestIdleCallback 在浏览器空闲时执行检测，避免阻塞主线程
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(
+        () => {
+          this.check();
+        },
+        { timeout: 1000 } // 最多等待 1 秒，确保检测能执行
+      );
+    } else {
+      // 降级方案：使用 setTimeout 延迟执行
+      setTimeout(() => {
+        this.check();
+      }, 0);
+    }
   }
 
   stop(): void {
