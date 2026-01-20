@@ -10,6 +10,7 @@ class DevtoolsDetector {
   private isOpen: boolean = false;
   private checkInterval: number;
   private timer: number | null = null;
+  private idleCallbackId: number | null = null; // 保存 requestIdleCallback 的 ID
   private onOpen?: () => void;
   private onClose?: () => void;
   private maxCheckCount: number;
@@ -69,10 +70,23 @@ class DevtoolsDetector {
       clearTimeout(this.timer);
       this.timer = null;
     }
+    if (this.idleCallbackId !== null) {
+      if ('cancelIdleCallback' in window) {
+        cancelIdleCallback(this.idleCallbackId);
+      }
+      this.idleCallbackId = null;
+    }
   }
 
   private scheduleCheck(): void {
     const runDetection = (deadline: IdleDeadline | { timeRemaining: () => number; didTimeout: boolean }): void => {
+      this.idleCallbackId = null; // 清除 ID，因为回调已执行
+      
+      // 检查是否已停止
+      if (this.shouldStop) {
+        return;
+      }
+      
       if (deadline.timeRemaining() > 0 || deadline.didTimeout) {
         this.check();
         
@@ -97,7 +111,7 @@ class DevtoolsDetector {
     };
 
     if ('requestIdleCallback' in window) {
-      requestIdleCallback(runDetection, { timeout: 2000 });
+      this.idleCallbackId = requestIdleCallback(runDetection, { timeout: 2000 });
     } else {
       setTimeout(() => {
         runDetection({ timeRemaining: () => 50, didTimeout: false });
