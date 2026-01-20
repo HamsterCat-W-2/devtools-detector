@@ -43,7 +43,24 @@ interface DevtoolsDetectorOptions {
   onOpen?: () => void; // 开发者工具打开时的回调
   onClose?: () => void; // 开发者工具关闭时的回调
   maxCheckCount?: number; // 最大检测次数，默认无限制（Infinity）
+  disableQueryParam?: string; // URL 参数名，如果存在且为 true 则禁用检测，默认 'mbFE'
 }
+```
+
+### 禁用检测
+
+如果需要在开发或调试时禁用检测，可以在 URL 中添加参数：
+
+```
+https://your-site.com?mbFE=true
+```
+
+或者自定义参数名：
+
+```javascript
+const detector = new DevtoolsDetector({
+  disableQueryParam: "debug", // 使用 ?debug=true 来禁用
+});
 ```
 
 ```typescript

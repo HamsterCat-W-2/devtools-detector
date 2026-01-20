@@ -3,6 +3,7 @@ interface DevtoolsDetectorOptions {
   onOpen?: () => void;
   onClose?: () => void;
   maxCheckCount?: number;
+  disableQueryParam?: string; // URL 参数名，如果存在且为 true 则禁用检测
 }
 
 class DevtoolsDetector {
@@ -16,15 +17,31 @@ class DevtoolsDetector {
   private openDetectionCount: number = 0; // 检测到打开的次数
   private closeDetectionCount: number = 0; // 检测到关闭的次数
   private readonly DETECTION_THRESHOLD = 3; // 需要连续检测3次才确认状态变化
+  private disableQueryParam: string;
+  private isDisabledByQuery: boolean = false;
 
   constructor(options: DevtoolsDetectorOptions = {}) {
     this.checkInterval = options.checkInterval || 500;
     this.onOpen = options.onOpen;
     this.onClose = options.onClose;
     this.maxCheckCount = options.maxCheckCount || Infinity;
+    this.disableQueryParam = options.disableQueryParam || 'mbFE';
+    
+    // 检查 URL 参数是否禁用检测
+    this.isDisabledByQuery = this.checkDisableQuery();
+    
+    if (this.isDisabledByQuery) {
+      console.log(`检测已禁用：URL 参数 ${this.disableQueryParam}=true`);
+    }
   }
 
   start(): void {
+    // 如果被 URL 参数禁用，则不启动检测
+    if (this.isDisabledByQuery) {
+      console.log('检测已被 URL 参数禁用，不会启动');
+      return;
+    }
+    
     this.checkCount = 0;
     this.check();
     this.timer = window.setInterval(() => {
@@ -45,6 +62,24 @@ class DevtoolsDetector {
     if (this.timer !== null) {
       clearInterval(this.timer);
       this.timer = null;
+    }
+  }
+
+  private checkDisableQuery(): boolean {
+    // 检查 URL 参数是否包含禁用标志
+    if (typeof window === 'undefined' || !window.location) {
+      return false;
+    }
+    
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramValue = urlParams.get(this.disableQueryParam);
+      
+      // 参数值为 'true' 或 '1' 时禁用检测
+      return paramValue === 'true';
+    } catch (e) {
+      // 如果解析失败，不禁用检测
+      return false;
     }
   }
 
