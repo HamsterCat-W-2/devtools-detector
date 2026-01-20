@@ -102,15 +102,27 @@ class DevtoolsDetector {
       },
     }));
 
+    // 选择对比方法：优先使用 console.table
+    // console.dir 和 console.group 的性能差异可能不够明显，所以只使用 table
+    let compareMethod: ((data: any) => void) | null = null;
+    
+    if (console.table && typeof console.table === 'function') {
+      compareMethod = console.table.bind(console);
+    } else {
+      // 如果不支持 console.table，则不使用此检测方法
+      // 因为 console.dir 和 console.group 的性能差异不够明显
+      return { isOpen: false, avgLogTime: 0, avgTableTime: 0 };
+    }
+
     // 预热，避免首次调用的初始化开销
-    console.clear();
+    if (console.clear) console.clear();
     console.log(testData);
-    console.table(testData);
+    compareMethod(testData);
 
     // 多次测量取平均值
-    const iterations = 5; // 增加测量次数
+    const iterations = 5;
     let totalLogTime = 0;
-    let totalTableTime = 0;
+    let totalCompareTime = 0;
 
     for (let i = 0; i < iterations; i++) {
       const logStart = performance.now();
@@ -118,18 +130,18 @@ class DevtoolsDetector {
       const logEnd = performance.now();
       totalLogTime += logEnd - logStart;
 
-      const tableStart = performance.now();
-      console.table(testData);
-      const tableEnd = performance.now();
-      totalTableTime += tableEnd - tableStart;
+      const compareStart = performance.now();
+      compareMethod(testData);
+      const compareEnd = performance.now();
+      totalCompareTime += compareEnd - compareStart;
 
-      console.clear()
+      if (console.clear) console.clear();
     }
 
     const avgLogTime = totalLogTime / iterations;
-    const avgTableTime = totalTableTime / iterations;
+    const avgTableTime = totalCompareTime / iterations;
 
-    // 提高阈值，减少误判：table 时间超过 log 的 3 倍，且时间差大于 1ms
+    // 提高阈值，减少误判：table 时间超过 log 的 4 倍，且时间差大于 0.9ms
     const ratio = avgTableTime / avgLogTime;
     const diff = avgTableTime - avgLogTime;
     const isOpen = ratio > 4 && diff > 0.9;
