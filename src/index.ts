@@ -21,6 +21,7 @@ class DevtoolsDetector {
   private isDisabledByQuery: boolean = false;
   private visibilityChangeHandler: (() => void) | null = null;
   private isRunning: boolean = false; // 标记检测是否正在运行
+  private shouldStop: boolean = false; // 标记是否应该停止递归
 
   constructor(options: DevtoolsDetectorOptions = {}) {
     this.checkInterval = options.checkInterval || 1000; // 默认 1 秒
@@ -38,59 +39,60 @@ class DevtoolsDetector {
   }
 
   start(): void {
-    // 如果被 URL 参数禁用，则不启动检测
     if (this.isDisabledByQuery) {
       console.log('检测已被 URL 参数禁用，不会启动');
       return;
     }
     
-    // 如果已经在运行，不重复启动
     if (this.isRunning) {
       return;
     }
     
     this.isRunning = true;
+    this.shouldStop = false;
     this.checkCount = 0;
     this.startTimer();
-    
-    // 监听页面可见性变化
     this.setupVisibilityListener();
   }
 
   private startTimer(): void {
-    if (this.timer !== null) {
+    if (this.shouldStop) {
       return;
     }
     
-    this.scheduleCheck(); // 首次检测
-    
-    // 使用定时器调度后续检测
-    this.timer = window.setInterval(() => {
-      this.checkCount++;
-      if (
-        this.maxCheckCount !== Infinity &&
-        this.checkCount >= this.maxCheckCount
-      ) {
-        console.log(`已达到最大检测次数 ${this.maxCheckCount}，停止检测`);
-        this.stop();
-        return;
-      }
-      this.scheduleCheck();
-    }, this.checkInterval);
+    this.scheduleCheck();
   }
 
   private stopTimer(): void {
+    this.shouldStop = true;
     if (this.timer !== null) {
-      clearInterval(this.timer);
+      clearTimeout(this.timer);
       this.timer = null;
     }
   }
 
   private scheduleCheck(): void {
-    console.log('执行开发者工具检测...');
     const runDetection = (deadline: IdleDeadline | { timeRemaining: () => number; didTimeout: boolean }): void => {
       if (deadline.timeRemaining() > 0 || deadline.didTimeout) {
         this.check();
+        
+        // 检查是否需要继续
+        this.checkCount++;
+        if (
+          this.maxCheckCount !== Infinity &&
+          this.checkCount >= this.maxCheckCount
+        ) {
+          console.log(`已达到最大检测次数 ${this.maxCheckCount}，停止检测`);
+          this.stop();
+          return;
+        }
+        
+        // 递归调用，继续下一次检测
+        if (!this.shouldStop) {
+          this.timer = window.setTimeout(() => {
+            this.scheduleCheck();
+          }, this.checkInterval);
+        }
       }
     };
 
@@ -118,7 +120,8 @@ class DevtoolsDetector {
         this.stopTimer();
       } else {
         console.log('页面可见，恢复检测');
-        if (this.isRunning) {
+        if (this.isRunning && this.shouldStop) {
+          this.shouldStop = false;
           this.startTimer();
         }
       }
