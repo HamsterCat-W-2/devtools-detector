@@ -82,13 +82,31 @@ class DevtoolsDetector {
     return after - before > 100;
   }
 
+  private checkEruda(): boolean {
+    // 检测 Eruda 移动端调试工具
+    // Eruda 会在 window 对象上添加 eruda 属性
+    if (typeof window !== 'undefined' && (window as any).eruda) {
+      // 检查 eruda 是否已初始化
+      const eruda = (window as any).eruda;
+      // eruda._isInit 表示已经初始化
+      return !!(eruda._isInit || eruda._devTools);
+    }
+    
+    // 检测 vConsole（另一个流行的移动端调试工具）
+    if (typeof window !== 'undefined' && (window as any).vConsole) {
+      return true;
+    }
+    
+    return false;
+  }
+
   private checkConsoleTimeDiff(): {
     isOpen: boolean;
     avgLogTime: number;
     avgTableTime: number;
   } {
     // 创建复杂对象数组，让时间差更明显
-    const testData = Array.from({ length: 50 }, (_, i) => ({
+    const testData = Array.from({ length: 500 }, (_, i) => ({
       id: i,
       name: `Item ${i}`,
       value: Math.random() * 1000,
@@ -152,6 +170,7 @@ class DevtoolsDetector {
   private detectDevtools(): boolean {
     const results = {
       debugger: this.checkDebugger(),
+      eruda: this.checkEruda(),
       consoleTimeDiff: false,
     };
 
@@ -174,7 +193,7 @@ class DevtoolsDetector {
     });
 
     // 只要有一个检测方法触发即判定为打开
-    return results.debugger || results.consoleTimeDiff;
+    return results.debugger || results.eruda || results.consoleTimeDiff;
   }
 
   getStatus(): boolean {

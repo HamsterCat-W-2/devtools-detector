@@ -67,8 +67,9 @@ interface DevtoolsDetectorOptions {
 
 1. **Debugger 检测** - 利用 debugger 语句的执行时间差异（可能被禁用）
 2. **Console 时间差检测** - 对比 console.log 和 console.table 的执行时间差异
+3. **Eruda/vConsole 检测** - 检测移动端调试工具（Eruda 和 vConsole）
 
-检测机制：需要连续检测到 5 次相同状态才会触发状态变化，避免误判。
+检测机制：需要连续检测到 3 次相同状态才会触发状态变化，避免误判。
 
 ## 开发
 
