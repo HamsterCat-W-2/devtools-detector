@@ -19,6 +19,9 @@ const now = (() => {
   return () => Date.now();
 })();
 
+// 记录历史最大 log 时间作为基线，避免首次检测误判
+let maxLogTime = 0;
+
 class DevtoolsDetector {
   private isOpen: boolean = false;
   private checkInterval: number;
@@ -232,12 +235,13 @@ class DevtoolsDetector {
     return false;
   }
 
-  private checkConsoleTimeDiff(): {
-    isOpen: boolean;
-    avgLogTime: number;
-    avgTableTime: number;
-  } {
-    // 创建复杂对象数组，让时间差更明显
+  private checkConsoleTimeDiff(): boolean {
+    // 检查是否支持 console.table
+    if (!cachedConsoleTable || typeof cachedConsoleTable !== 'function') {
+      return false;
+    }
+
+    // 创建复杂对象数组
     const testData = Array.from({ length: 500 }, (_, i) => ({
       id: i,
       name: `Item ${i}`,
@@ -246,50 +250,44 @@ class DevtoolsDetector {
       nested: {
         prop1: `value${i}`,
         prop2: i * 2,
-        prop3: {
-          deep: `deep${i}`,
-        },
+        prop3: { deep: `deep${i}` },
       },
     }));
 
-    // 检查是否支持 console.table
-    if (!cachedConsoleTable || typeof cachedConsoleTable !== 'function') {
-      return { isOpen: false, avgLogTime: 0, avgTableTime: 0 };
-    }
-
-    // 预热，避免首次调用的初始化开销
+    // 预热
     if (cachedConsoleClear) cachedConsoleClear.call(console);
     cachedConsoleLog.call(console, testData);
     cachedConsoleTable.call(console, testData);
+    if (cachedConsoleClear) cachedConsoleClear.call(console);
 
-    // 多次测量取平均值
-    const iterations = 5;
-    let totalLogTime = 0;
-    let totalCompareTime = 0;
+    // 测量 log 时间（两次取最大值，减少波动）
+    const logStart1 = now();
+    cachedConsoleLog.call(console, testData);
+    const logTime1 = now() - logStart1;
 
-    for (let i = 0; i < iterations; i++) {
-      const logStart = now();
-      cachedConsoleLog.call(console, testData);
-      const logEnd = now();
-      totalLogTime += logEnd - logStart;
+    const logStart2 = now();
+    cachedConsoleLog.call(console, testData);
+    const logTime2 = now() - logStart2;
 
-      const compareStart = now();
-      cachedConsoleTable.call(console, testData);
-      const compareEnd = now();
-      totalCompareTime += compareEnd - compareStart;
+    const currentLogTime = Math.max(logTime1, logTime2);
 
-      if (cachedConsoleClear) cachedConsoleClear.call(console);
+    // 测量 table 时间
+    const tableStart = now();
+    cachedConsoleTable.call(console, testData);
+    const tableTime = now() - tableStart;
+
+    if (cachedConsoleClear) cachedConsoleClear.call(console);
+
+    // 更新历史最大值作为基线
+    maxLogTime = Math.max(maxLogTime, currentLogTime);
+
+    // 边界情况：table 时间为 0 或基线未建立
+    if (tableTime === 0 || maxLogTime === 0) {
+      return false;
     }
 
-    const avgLogTime = totalLogTime / iterations;
-    const avgTableTime = totalCompareTime / iterations;
-
-    // 提高阈值，减少误判：table 时间超过 log 的 4 倍，且时间差大于 0.9ms
-    const ratio = avgTableTime / avgLogTime;
-    const diff = avgTableTime - avgLogTime;
-    const isOpen = ratio > 4 && diff > 0.9;
-
-    return { isOpen, avgLogTime, avgTableTime };
+    // 核心算法：table 时间 > log 基线的 10 倍
+    return tableTime > maxLogTime * 10;
   }
   
 
@@ -297,26 +295,8 @@ class DevtoolsDetector {
     const results = {
       debugger: this.checkDebugger(),
       eruda: this.checkEruda(),
-      consoleTimeDiff: false,
+      consoleTimeDiff: this.checkConsoleTimeDiff(),
     };
-
-    const timeDiffResult = this.checkConsoleTimeDiff();
-    results.consoleTimeDiff = timeDiffResult.isOpen;
-
-    // 打印每个检测方法的结果
-    // console.log("检测结果:", {
-    //   ...results,
-    //   timings: {
-    //     avgLogTime: timeDiffResult.avgLogTime.toFixed(3) + "ms",
-    //     avgTableTime: timeDiffResult.avgTableTime.toFixed(3) + "ms",
-    //     ratio:
-    //       (timeDiffResult.avgTableTime / timeDiffResult.avgLogTime).toFixed(2) +
-    //       "x",
-    //     diff:
-    //       (timeDiffResult.avgTableTime - timeDiffResult.avgLogTime).toFixed(3) +
-    //       "ms",
-    //   },
-    // });
 
     // 只要有一个检测方法触发即判定为打开
     return results.debugger || results.eruda || results.consoleTimeDiff;
