@@ -6,6 +6,11 @@ interface DevtoolsDetectorOptions {
   disableQueryParam?: string; // URL 参数名，如果存在且为 true 则禁用检测
 }
 
+// 缓存 console 方法，避免重复访问和兼容性问题
+const cachedConsoleLog = console.log;
+const cachedConsoleTable = console.table;
+const cachedConsoleClear = console.clear;
+
 class DevtoolsDetector {
   private isOpen: boolean = false;
   private checkInterval: number;
@@ -239,22 +244,15 @@ class DevtoolsDetector {
       },
     }));
 
-    // 选择对比方法：优先使用 console.table
-    // console.dir 和 console.group 的性能差异可能不够明显，所以只使用 table
-    let compareMethod: ((data: any) => void) | null = null;
-    
-    if (console.table && typeof console.table === 'function') {
-      compareMethod = console.table.bind(console);
-    } else {
-      // 如果不支持 console.table，则不使用此检测方法
-      // 因为 console.dir 和 console.group 的性能差异不够明显
+    // 检查是否支持 console.table
+    if (!cachedConsoleTable || typeof cachedConsoleTable !== 'function') {
       return { isOpen: false, avgLogTime: 0, avgTableTime: 0 };
     }
 
     // 预热，避免首次调用的初始化开销
-    if (console.clear) console.clear();
-    console.log(testData);
-    compareMethod(testData);
+    if (cachedConsoleClear) cachedConsoleClear.call(console);
+    cachedConsoleLog.call(console, testData);
+    cachedConsoleTable.call(console, testData);
 
     // 多次测量取平均值
     const iterations = 5;
@@ -263,16 +261,16 @@ class DevtoolsDetector {
 
     for (let i = 0; i < iterations; i++) {
       const logStart = performance.now();
-      console.log(testData);
+      cachedConsoleLog.call(console, testData);
       const logEnd = performance.now();
       totalLogTime += logEnd - logStart;
 
       const compareStart = performance.now();
-      compareMethod(testData);
+      cachedConsoleTable.call(console, testData);
       const compareEnd = performance.now();
       totalCompareTime += compareEnd - compareStart;
 
-      if (console.clear) console.clear();
+      if (cachedConsoleClear) cachedConsoleClear.call(console);
     }
 
     const avgLogTime = totalLogTime / iterations;
@@ -285,6 +283,7 @@ class DevtoolsDetector {
 
     return { isOpen, avgLogTime, avgTableTime };
   }
+  
 
   private detectDevtools(): boolean {
     const results = {
