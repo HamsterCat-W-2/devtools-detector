@@ -54,7 +54,7 @@
     
     const detector = new DevtoolsDetector({
       checkInterval: 500,
-      maxCheckCount: 5, // 开发环境只检测5次
+      // maxCheckCount: 5, // 开发环境只检测5次
       onOpen: () => {
         statusEl.textContent = '开发者工具状态: 打开';
         statusEl.className = 'status open';

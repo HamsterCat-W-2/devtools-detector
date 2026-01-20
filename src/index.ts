@@ -15,7 +15,7 @@ class DevtoolsDetector {
   private checkCount: number = 0;
   private openDetectionCount: number = 0; // 检测到打开的次数
   private closeDetectionCount: number = 0; // 检测到关闭的次数
-  private readonly DETECTION_THRESHOLD = 5; // 需要连续检测5次才确认状态变化
+  private readonly DETECTION_THRESHOLD = 3; // 需要连续检测3次才确认状态变化
 
   constructor(options: DevtoolsDetectorOptions = {}) {
     this.checkInterval = options.checkInterval || 500;
