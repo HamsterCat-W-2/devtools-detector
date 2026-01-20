@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevTools Detector 示例</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .status {
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .open {
+      background-color: #ffebee;
+      color: #c62828;
+    }
+    .closed {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>DevTools Detector 示例</h1>
+  <p>打开或关闭浏览器开发者工具来测试检测功能</p>
+  
+  <div id="status" class="status closed">
+    开发者工具状态: 关闭
+  </div>
+  
+  <div>
+    <button onclick="detector.start()">开始检测</button>
+    <button onclick="detector.stop()">停止检测</button>
+  </div>
+
+  <script src="../dist/index.umd.js"></script>
+  <script>
+    const statusEl = document.getElementById('status');
+    
+    const detector = new DevtoolsDetector({
+      checkInterval: 500,
+      onOpen: () => {
+        statusEl.textContent = '开发者工具状态: 打开';
+        statusEl.className = 'status open';
+        console.log('开发者工具已打开！');
+      },
+      onClose: () => {
+        statusEl.textContent = '开发者工具状态: 关闭';
+        statusEl.className = 'status closed';
+        console.log('开发者工具已关闭！');
+      },
+      disableMenu: false
+    });
+    
+    // 自动开始检测
+    detector.start();
+  </script>
+</body>
+</html>

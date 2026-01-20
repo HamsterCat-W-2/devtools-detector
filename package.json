@@ -1,0 +1,28 @@
+{
+  "name": "devtools-detector",
+  "version": "1.0.0",
+  "description": "检测浏览器开发者工具是否打开",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "devtools",
+    "detector",
+    "browser",
+    "developer-tools",
+    "debug"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^11.1.5",
+    "rollup": "^4.9.0",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.3"
+  }
+}
