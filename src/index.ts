@@ -82,38 +82,6 @@ class DevtoolsDetector {
     return after - before > 100;
   }
 
-  private checkConsoleGetter(): boolean {
-    let isTriggered = false;
-    const element = new Image();
-    Object.defineProperty(element, "id", {
-      get: function () {
-        isTriggered = true;
-        return "devtools-detector";
-      },
-    });
-    console.log(element);
-    return isTriggered;
-  }
-
-  private checkToString(): boolean {
-    let isTriggered = false;
-    const fakeObject = {};
-    Object.defineProperty(fakeObject, "toString", {
-      get: function () {
-        isTriggered = true;
-        return function () {
-          return "";
-        };
-      },
-    });
-    console.log(fakeObject);
-    return isTriggered;
-  }
-
-  private checkFirebug(): boolean {
-    return !!(window.console && (window.console as any).firebug);
-  }
-
   private checkConsoleTimeDiff(): {
     isOpen: boolean;
     avgLogTime: number;
@@ -172,9 +140,6 @@ class DevtoolsDetector {
   private detectDevtools(): boolean {
     const results = {
       debugger: this.checkDebugger(),
-      consoleGetter: this.checkConsoleGetter(),
-      toString: this.checkToString(),
-      firebug: this.checkFirebug(),
       consoleTimeDiff: false,
     };
 
@@ -196,17 +161,8 @@ class DevtoolsDetector {
       },
     });
 
-    // 强检测：debugger, firebug - 单独触发即可判定
-    const reliableDetection =
-      results.debugger || results.consoleTimeDiff || results.firebug;
-
-    // 弱检测：consoleGetter, toString, consoleTimeDiff
-    // 需要至少两个弱检测同时触发才判定为打开
-    const weakDetectionCount = [results.consoleGetter, results.toString].filter(
-      Boolean,
-    ).length;
-
-    return reliableDetection || weakDetectionCount >= 2;
+    // 只要有一个检测方法触发即判定为打开
+    return results.debugger || results.consoleTimeDiff;
   }
 
   getStatus(): boolean {

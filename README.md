@@ -66,10 +66,9 @@ interface DevtoolsDetectorOptions {
 该库使用多种方法来检测开发者工具：
 
 1. **Debugger 检测** - 利用 debugger 语句的执行时间差异（可能被禁用）
-2. **Console 对象检测** - 通过 console.log 对象属性 getter 检测
-3. **ToString 方法检测** - 检测 console.log 是否触发对象的 toString
-4. **Firebug 检测** - 检测特定浏览器的 devtools 标识
-5. **Console 时间差检测** - 对比 console.log 和 console.table 的执行时间差异
+2. **Console 时间差检测** - 对比 console.log 和 console.table 的执行时间差异
+
+检测机制：需要连续检测到 5 次相同状态才会触发状态变化，避免误判。
 
 ## 开发
 
