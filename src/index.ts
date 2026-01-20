@@ -11,6 +11,14 @@ const cachedConsoleLog = console.log;
 const cachedConsoleTable = console.table;
 const cachedConsoleClear = console.clear;
 
+// 时间测量函数，兼容老浏览器
+const now = (() => {
+  if (typeof performance !== 'undefined' && performance.now) {
+    return () => performance.now();
+  }
+  return () => Date.now();
+})();
+
 class DevtoolsDetector {
   private isOpen: boolean = false;
   private checkInterval: number;
@@ -199,10 +207,10 @@ class DevtoolsDetector {
   }
 
   private checkDebugger(): boolean {
-    const before = new Date().getTime();
+    const before = now();
     // eslint-disable-next-line no-debugger
     debugger;
-    const after = new Date().getTime();
+    const after = now();
     return after - before > 100;
   }
 
@@ -260,14 +268,14 @@ class DevtoolsDetector {
     let totalCompareTime = 0;
 
     for (let i = 0; i < iterations; i++) {
-      const logStart = performance.now();
+      const logStart = now();
       cachedConsoleLog.call(console, testData);
-      const logEnd = performance.now();
+      const logEnd = now();
       totalLogTime += logEnd - logStart;
 
-      const compareStart = performance.now();
+      const compareStart = now();
       cachedConsoleTable.call(console, testData);
-      const compareEnd = performance.now();
+      const compareEnd = now();
       totalCompareTime += compareEnd - compareStart;
 
       if (cachedConsoleClear) cachedConsoleClear.call(console);
