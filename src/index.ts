@@ -19,6 +19,8 @@ class DevtoolsDetector {
   private readonly DETECTION_THRESHOLD = 3; // 需要连续检测3次才确认状态变化
   private disableQueryParam: string;
   private isDisabledByQuery: boolean = false;
+  private visibilityChangeHandler: (() => void) | null = null;
+  private isRunning: boolean = false; // 标记检测是否正在运行
 
   constructor(options: DevtoolsDetectorOptions = {}) {
     this.checkInterval = options.checkInterval || 1000; // 默认 1 秒
@@ -42,7 +44,24 @@ class DevtoolsDetector {
       return;
     }
     
+    // 如果已经在运行，不重复启动
+    if (this.isRunning) {
+      return;
+    }
+    
+    this.isRunning = true;
     this.checkCount = 0;
+    this.startTimer();
+    
+    // 监听页面可见性变化
+    this.setupVisibilityListener();
+  }
+
+  private startTimer(): void {
+    if (this.timer !== null) {
+      return;
+    }
+    
     this.scheduleCheck(); // 首次检测
     
     // 使用定时器调度后续检测
@@ -58,6 +77,13 @@ class DevtoolsDetector {
       }
       this.scheduleCheck();
     }, this.checkInterval);
+  }
+
+  private stopTimer(): void {
+    if (this.timer !== null) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
   }
 
   private scheduleCheck(): void {
@@ -78,9 +104,33 @@ class DevtoolsDetector {
   }
 
   stop(): void {
-    if (this.timer !== null) {
-      clearInterval(this.timer);
-      this.timer = null;
+    this.stopTimer();
+    this.isRunning = false;
+    this.removeVisibilityListener();
+  }
+  
+  private setupVisibilityListener(): void {
+    this.removeVisibilityListener();
+    
+    this.visibilityChangeHandler = () => {
+      if (document.hidden) {
+        console.log('页面不可见，暂停检测');
+        this.stopTimer();
+      } else {
+        console.log('页面可见，恢复检测');
+        if (this.isRunning) {
+          this.startTimer();
+        }
+      }
+    };
+    
+    document.addEventListener('visibilitychange', this.visibilityChangeHandler);
+  }
+  
+  private removeVisibilityListener(): void {
+    if (this.visibilityChangeHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityChangeHandler);
+      this.visibilityChangeHandler = null;
     }
   }
 
@@ -232,19 +282,19 @@ class DevtoolsDetector {
     results.consoleTimeDiff = timeDiffResult.isOpen;
 
     // 打印每个检测方法的结果
-    console.log("检测结果:", {
-      ...results,
-      timings: {
-        avgLogTime: timeDiffResult.avgLogTime.toFixed(3) + "ms",
-        avgTableTime: timeDiffResult.avgTableTime.toFixed(3) + "ms",
-        ratio:
-          (timeDiffResult.avgTableTime / timeDiffResult.avgLogTime).toFixed(2) +
-          "x",
-        diff:
-          (timeDiffResult.avgTableTime - timeDiffResult.avgLogTime).toFixed(3) +
-          "ms",
-      },
-    });
+    // console.log("检测结果:", {
+    //   ...results,
+    //   timings: {
+    //     avgLogTime: timeDiffResult.avgLogTime.toFixed(3) + "ms",
+    //     avgTableTime: timeDiffResult.avgTableTime.toFixed(3) + "ms",
+    //     ratio:
+    //       (timeDiffResult.avgTableTime / timeDiffResult.avgLogTime).toFixed(2) +
+    //       "x",
+    //     diff:
+    //       (timeDiffResult.avgTableTime - timeDiffResult.avgLogTime).toFixed(3) +
+    //       "ms",
+    //   },
+    // });
 
     // 只要有一个检测方法触发即判定为打开
     return results.debugger || results.eruda || results.consoleTimeDiff;
