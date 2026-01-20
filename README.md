@@ -42,6 +42,7 @@ interface DevtoolsDetectorOptions {
   checkInterval?: number; // 检测间隔（毫秒），默认 500
   onOpen?: () => void; // 开发者工具打开时的回调
   onClose?: () => void; // 开发者工具关闭时的回调
+  maxCheckCount?: number; // 最大检测次数，默认无限制（Infinity）
 }
 ```
 
@@ -68,7 +69,7 @@ interface DevtoolsDetectorOptions {
 2. **Console 对象检测** - 通过 console.log 对象属性 getter 检测
 3. **ToString 方法检测** - 检测 console.log 是否触发对象的 toString
 4. **Firebug 检测** - 检测特定浏览器的 devtools 标识
-5. **正则表达式 toString 检测** - 利用 console.log 对正则的特殊处理
+5. **Console 时间差检测** - 对比 console.log 和 console.table 的执行时间差异
 
 ## 开发
 
