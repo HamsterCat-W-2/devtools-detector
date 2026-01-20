@@ -8,7 +8,6 @@
 - ⚡ 轻量级，无依赖
 - 🎯 支持 TypeScript
 - 🔧 可配置的检测间隔和回调函数
-- 🚫 可选的右键菜单和快捷键禁用功能
 
 ## 安装
 
@@ -43,6 +42,14 @@ interface DevtoolsDetectorOptions {
   checkInterval?: number; // 检测间隔（毫秒），默认 500
   onOpen?: () => void; // 开发者工具打开时的回调
   onClose?: () => void; // 开发者工具关闭时的回调
+}
+```
+
+```typescript
+interface DevtoolsDetectorOptions {
+  checkInterval?: number; // 检测间隔（毫秒），默认 500
+  onOpen?: () => void; // 开发者工具打开时的回调
+  onClose?: () => void; // 开发者工具关闭时的回调
   disableMenu?: boolean; // 是否禁用右键菜单和快捷键，默认 false
 }
 ```
@@ -57,9 +64,11 @@ interface DevtoolsDetectorOptions {
 
 该库使用多种方法来检测开发者工具：
 
-1. **窗口尺寸检测** - 检测 `outerWidth/outerHeight` 与 `innerWidth/innerHeight` 的差异
-2. **Debugger 检测** - 利用 debugger 语句的执行时间差异
-3. **Console 检测** - 通过 console.log 对象属性访问检测
+1. **Debugger 检测** - 利用 debugger 语句的执行时间差异（可能被禁用）
+2. **Console 对象检测** - 通过 console.log 对象属性 getter 检测
+3. **ToString 方法检测** - 检测 console.log 是否触发对象的 toString
+4. **Firebug 检测** - 检测特定浏览器的 devtools 标识
+5. **正则表达式 toString 检测** - 利用 console.log 对正则的特殊处理
 
 ## 开发
 
@@ -81,7 +90,6 @@ npm run build
 ## 注意事项
 
 - 检测方法可能不是 100% 准确，某些浏览器或扩展可能影响检测结果
-- `disableMenu` 选项会禁用右键菜单和常用的开发者工具快捷键，请谨慎使用
 - 该库主要用于学习和研究目的
 
 ## License

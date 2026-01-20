@@ -6,7 +6,8 @@ export default {
     {
       file: 'dist/index.js',
       format: 'cjs',
-      sourcemap: true
+      sourcemap: true,
+      exports: 'named'
     },
     {
       file: 'dist/index.esm.js',
@@ -17,7 +18,8 @@ export default {
       file: 'dist/index.umd.js',
       format: 'umd',
       name: 'DevtoolsDetector',
-      sourcemap: true
+      sourcemap: true,
+      exports: 'default'
     }
   ],
   plugins: [
