@@ -80,9 +80,8 @@ class DevtoolsDetector {
 
   private scheduleCheck(): void {
     const runDetection = (deadline: IdleDeadline | { timeRemaining: () => number; didTimeout: boolean }): void => {
-      this.idleCallbackId = null; // 清除 ID，因为回调已执行
+      this.idleCallbackId = null;
       
-      // 检查是否已停止
       if (this.shouldStop) {
         return;
       }
@@ -90,15 +89,14 @@ class DevtoolsDetector {
       if (deadline.timeRemaining() > 0 || deadline.didTimeout) {
         this.check();
         
-        // 检查是否需要继续
-        this.checkCount++;
-        if (
-          this.maxCheckCount !== Infinity &&
-          this.checkCount >= this.maxCheckCount
-        ) {
-          console.log(`已达到最大检测次数 ${this.maxCheckCount}，停止检测`);
-          this.stop();
-          return;
+        // 只有设置了最大检测次数才计数
+        if (this.maxCheckCount !== Infinity) {
+          this.checkCount++;
+          if (this.checkCount >= this.maxCheckCount) {
+            console.log(`已达到最大检测次数 ${this.maxCheckCount}，停止检测`);
+            this.stop();
+            return;
+          }
         }
         
         // 递归调用，继续下一次检测
