@@ -87,18 +87,18 @@ class DevtoolsDetector {
   }
 
   private scheduleCheck(): void {
-    // 使用 requestIdleCallback 在浏览器空闲时执行检测，避免阻塞主线程
-    if (typeof requestIdleCallback !== 'undefined') {
-      requestIdleCallback(
-        () => {
-          this.check();
-        },
-        { timeout: 1000 } // 最多等待 1 秒，确保检测能执行
-      );
-    } else {
-      // 降级方案：使用 setTimeout 延迟执行
-      setTimeout(() => {
+    console.log('执行开发者工具检测...');
+    const runDetection = (deadline: IdleDeadline | { timeRemaining: () => number; didTimeout: boolean }): void => {
+      if (deadline.timeRemaining() > 0 || deadline.didTimeout) {
         this.check();
+      }
+    };
+
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(runDetection, { timeout: 2000 });
+    } else {
+      setTimeout(() => {
+        runDetection({ timeRemaining: () => 50, didTimeout: false });
       }, 0);
     }
   }
