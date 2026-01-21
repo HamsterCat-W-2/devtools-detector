@@ -150,6 +150,29 @@ const isOpen = checkDebugger();
 const isDevtoolsOpen = detectDevtools();
 ```
 
+### 禁用开发者工具访问
+
+库提供了额外的工具函数来禁用用户通过常规方式打开开发者工具：
+
+```javascript
+import {
+  disableContextMenu,
+  disableKeyboardShortcuts,
+  disableAllDevtoolsAccess,
+} from "devtools-detector";
+
+// 禁用鼠标右键菜单
+disableContextMenu();
+
+// 禁用开发者工具快捷键（F12, Ctrl+Shift+I 等）
+disableKeyboardShortcuts();
+
+// 同时禁用右键和快捷键
+disableAllDevtoolsAccess();
+```
+
+**注意**：这些函数仅作为辅助手段，无法完全阻止技术用户打开开发者工具，但可以提高普通用户的访问门槛。
+
 ### 自定义检测逻辑
 
 ```javascript
