@@ -181,7 +181,55 @@ npm run build
 
 ## 示例
 
-查看 `example/index.html` 文件获取完整示例，或直接在浏览器中打开该文件测试。
+### 本地调试
+
+1. 克隆项目并安装依赖：
+
+```bash
+git clone <repository-url>
+cd devtools-detector
+npm install
+```
+
+2. 构建项目：
+
+```bash
+npm run build
+```
+
+3. 运行示例：
+
+```bash
+# 使用 Python 启动本地服务器
+python -m http.server 8000
+
+# 或使用 Node.js (需要先安装 http-server)
+npx http-server -p 8000
+```
+
+4. 在浏览器中打开：
+
+```
+http://localhost:8000/example/
+```
+
+5. 打开/关闭浏览器开发者工具（F12）来测试检测功能
+
+### 开发模式
+
+如果需要修改代码并实时查看效果：
+
+```bash
+# 终端 1: 监听文件变化并自动构建
+npm run dev
+
+# 终端 2: 启动本地服务器
+npx http-server -p 8000
+```
+
+修改 `src/` 目录下的代码后，刷新浏览器即可看到效果。
+
+查看 `example/index.html` 文件获取完整示例代码。
 
 ## 注意事项
 
