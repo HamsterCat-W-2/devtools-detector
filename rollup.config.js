@@ -19,7 +19,7 @@ export default {
       format: 'umd',
       name: 'DevtoolsDetector',
       sourcemap: true,
-      exports: 'default'
+      exports: 'named'
     }
   ],
   plugins: [

@@ -52,7 +52,8 @@
   <script>
     const statusEl = document.getElementById('status');
     
-    const detector = new DevtoolsDetector({
+    // 将 detector 暴露到全局作用域，以便按钮 onclick 可以访问
+    window.detector = new DevtoolsDetector.default({
       checkInterval: 1000,
       maxCheckCount: 5, // 开发环境只检测5次
       onOpen: () => {
